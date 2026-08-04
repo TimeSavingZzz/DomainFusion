@@ -264,7 +264,7 @@ def analyze_model(model, model_name, dataloader, device, output_dir, num_samples
             _ATTN_STORE.clear()
 
             # Forward — baseline Restormer takes RGB input; shadow-guided takes (gray, shadow)
-            if 'baseline' in model_name.lower():
+            if 'no fusion' in model_name.lower() or 'baseline' in model_name.lower():
                 out = model(inp_img)
             else:
                 out = model(gray_img, inp_img)
@@ -319,7 +319,7 @@ def analyze_model(model, model_name, dataloader, device, output_dir, num_samples
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', type=str, default='./attention_figures/')
-    parser.add_argument('--data_dir', type=str, default='./dataset/RDD/test/')
+    parser.add_argument('--data_dir', type=str, default='./dataset/SD7K/test/')
     parser.add_argument('--num_samples', type=int, default=3)
     parser.add_argument('--res', type=int, default=320)
     args = parser.parse_args()
@@ -328,7 +328,7 @@ def main():
     print(f"Device: {device}")
 
     # Load test data
-    dataset = get_data(args.data_dir, 'img', 'back_gt', mode='val',
+    dataset = get_data(args.data_dir, 'input', 'target', mode='val',
                        img_options={'h': args.res, 'w': args.res})
     loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False,
                                           num_workers=4)
@@ -337,24 +337,24 @@ def main():
 
     model_configs = [
         {
-            'name': '1_Restormer_baseline',
+            'name': 'Restormer (no fusion)',
             'builder': lambda: Restormer(),
-            'ckpt': './experiment_results/restormer_rdd/restormer_best.pth',
+            'ckpt': './experiment_results/restormer_sd7k/restormer_best.pth',
         },
         {
-            'name': '2_NoSGCA_concat',
+            'name': 'Concat',
             'builder': lambda: ShadowGuidedRestormer_NoSGCA(),
-            'ckpt': './experiment_results/nosgca_rdd/shadow_guided_restormer_no_sgca_best.pth',
+            'ckpt': './experiment_results/nosgca_sd7k/shadow_guided_restormer_no_sgca_best.pth',
         },
         {
-            'name': '3_FiLM_modulation',
+            'name': 'FiLM',
             'builder': lambda: ShadowGuidedRestormer_FiLM(),
-            'ckpt': './experiment_results/sgfm_rdd_v2/shadow_guided_restormer_film_best.pth',
+            'ckpt': './experiment_results/sgfm_sd7k/shadow_guided_restormer_film_best.pth',
         },
         {
-            'name': '4_Gated_fusion',
+            'name': 'Gated',
             'builder': lambda: ShadowGuidedRestormer_Gated(),
-            'ckpt': './experiment_results/sggf_rdd/shadow_guided_restormer_gated_best.pth',
+            'ckpt': './experiment_results/sggf_sd7k/shadow_guided_restormer_gated_best.pth',
         },
     ]
 

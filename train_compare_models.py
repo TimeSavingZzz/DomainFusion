@@ -25,8 +25,13 @@ from models.comparison_models import (BEDSRGenerator, UNet, NAFNet, Restormer, S
     ShadowGuidedRestormer_CrossAttn, ShadowGuidedRestormer_FiLM, ShadowGuidedRestormer_Large,
     ShadowGuidedRestormer_Gated, ShadowGuidedRestormer_GatedLarge,
     ShadowGuidedRestormer_Gated_NoShadow, ShadowGuidedRestormer_Gated_Dec3Only)
+from models.fusion_models import (ShadowGuidedNAFNet_FiLM, ShadowGuidedNAFNet_Gated,
+    ShadowGuidedNAFNet_CrossAttn, ShadowGuidedNAFNet_ASF, ShadowGuidedNAFNet_Large,
+    ShadowGuidedRestormer_ASF)
 from config.config import Config
 from data.data_RGB import get_data
+from data.dataset_lol import LOLDataReader
+from data.dataset_rain100h import Rain100HDataReader
 from utils import seed_everything
 
 # ---------------------------------------------------------------------------
@@ -48,6 +53,18 @@ DATASET_CONFIGS = {
     'synthetic': {
         'train_dir': './dataset/Synthetic/train/',
         'val_dir': './dataset/Synthetic/test/',
+        'input': 'input',
+        'target': 'target',
+    },
+    'lol': {
+        'train_dir': './dataset/LOL-v1/train/',
+        'val_dir': './dataset/LOL-v1/test/',
+        'input': 'input',
+        'target': 'target',
+    },
+    'rain100h': {
+        'train_dir': './dataset/Rain100H/train/',
+        'val_dir': './dataset/Rain100H/test/',
         'input': 'input',
         'target': 'target',
     },
@@ -88,10 +105,19 @@ def _load_docdeshadower():
 def build_dataloader(dataset_cfg, split='train', shuffle=True, batch_size=4, img_size=384,
                      text_detector=False):
     data_dir = dataset_cfg['train_dir'] if split == 'train' else dataset_cfg['val_dir']
-    ds = get_data(data_dir, dataset_cfg['input'], dataset_cfg['target'],
-                  mode='train' if split == 'train' else 'val',
-                  img_options={'h': img_size, 'w': img_size},
-                  text_detector=text_detector)
+    if 'lol' in data_dir.lower():
+        ds = LOLDataReader(data_dir, inp=dataset_cfg['input'], tar=dataset_cfg['target'],
+                           mode='train' if split == 'train' else 'val',
+                           img_options={'h': img_size, 'w': img_size})
+    elif 'rain100h' in data_dir.lower():
+        ds = Rain100HDataReader(data_dir, inp=dataset_cfg['input'], tar=dataset_cfg['target'],
+                                mode='train' if split == 'train' else 'val',
+                                img_options={'h': img_size, 'w': img_size})
+    else:
+        ds = get_data(data_dir, dataset_cfg['input'], dataset_cfg['target'],
+                      mode='train' if split == 'train' else 'val',
+                      img_options={'h': img_size, 'w': img_size},
+                      text_detector=text_detector)
     return DataLoader(ds, batch_size=batch_size, shuffle=shuffle,
                       num_workers=8, pin_memory=True, persistent_workers=True,
                       prefetch_factor=4)
@@ -116,8 +142,22 @@ def build_model(name, device, model_variant='v1'):
         return ShadowGuidedNAFNet().to(device), 'shadow_guided'
     elif name == 'shadow_guided_no_sgca':
         return ShadowGuidedNAFNet_NoSGCA().to(device), 'shadow_guided'
+    elif name == 'shadow_guided_nafnet_nosgca':
+        return ShadowGuidedNAFNet_NoSGCA().to(device), 'shadow_guided'
+    elif name == 'shadow_guided_nafnet_concat':
+        return ShadowGuidedNAFNet_Concat().to(device), 'shadow_guided'
     elif name == 'shadow_guided_concat':
         return ShadowGuidedNAFNet_Concat().to(device), 'shadow_guided'
+    elif name == 'shadow_guided_nafnet_film':
+        return ShadowGuidedNAFNet_FiLM().to(device), 'shadow_guided'
+    elif name == 'shadow_guided_nafnet_gated':
+        return ShadowGuidedNAFNet_Gated().to(device), 'shadow_guided'
+    elif name == 'shadow_guided_nafnet_crossattn':
+        return ShadowGuidedNAFNet_CrossAttn().to(device), 'shadow_guided'
+    elif name == 'shadow_guided_nafnet_asf':
+        return ShadowGuidedNAFNet_ASF().to(device), 'shadow_guided'
+    elif name == 'shadow_guided_nafnet_large':
+        return ShadowGuidedNAFNet_Large().to(device), 'shadow_guided'
     elif name == 'restormer':
         return Restormer().to(device), 'simple'
     elif name == 'shadow_guided_restormer':
@@ -132,6 +172,8 @@ def build_model(name, device, model_variant='v1'):
         return ShadowGuidedRestormer_FiLM().to(device), 'shadow_guided'
     elif name == 'shadow_guided_restormer_large':
         return ShadowGuidedRestormer_Large().to(device), 'shadow_guided'
+    elif name == 'shadow_guided_restormer_asf':
+        return ShadowGuidedRestormer_ASF().to(device), 'shadow_guided'
     elif name == 'shadow_guided_restormer_gated':
         return ShadowGuidedRestormer_Gated().to(device), 'shadow_guided'
     elif name == 'shadow_guided_restormer_gated_large':
@@ -428,7 +470,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='all',
                         help='Model name(s): all, or comma-separated: baseline,textaware,docdeshadower,bedsr,unet,nafnet,restormer')
-    parser.add_argument('--dataset', type=str, default='rdd', choices=['rdd', 'sd7k', 'synthetic'])
+    parser.add_argument('--dataset', type=str, default='rdd', choices=['rdd', 'sd7k', 'synthetic', 'lol', 'rain100h'])
     parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--lr', type=float, default=2e-4)
     parser.add_argument('--batch_size', type=int, default=4)
