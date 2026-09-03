@@ -1,0 +1,9 @@
+{
+  "Restormer": 0.055429,
+  "No SGCA": 0.046067,
+  "CrossAttn": 0.048044,
+  "FiLM": 0.055668,
+  "Gated": 0.049568,
+  "GatedLarge": 0.051594,
+  "Large": 0.049566
+}

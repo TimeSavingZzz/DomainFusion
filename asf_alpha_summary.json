@@ -1,0 +1,30 @@
+{
+  "Restormer-ASF SD7K": {
+    "mean": 0.0,
+    "median": 0.0,
+    "std": 0.0,
+    "pct_lt_0.5": 1.0,
+    "n": 60
+  },
+  "Restormer-ASF RDD": {
+    "mean": 0.0,
+    "median": 0.0,
+    "std": 0.0,
+    "pct_lt_0.5": 1.0,
+    "n": 60
+  },
+  "NAFNet-ASF SD7K": {
+    "mean": 0.4959,
+    "median": 0.4963,
+    "std": 0.0053,
+    "pct_lt_0.5": 0.7833,
+    "n": 60
+  },
+  "NAFNet-ASF RDD": {
+    "mean": 0.3749,
+    "median": 0.409,
+    "std": 0.0755,
+    "pct_lt_0.5": 1.0,
+    "n": 60
+  }
+}
